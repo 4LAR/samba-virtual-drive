@@ -177,3 +177,22 @@ def list_filesystems():
         return filesystems
     except subprocess.CalledProcessError:
         return []
+
+# Пример использования
+if __name__ == "__main__":
+    disk = VirtualDisk("./disk.img")
+    mount_path = "./test_mount"
+
+    try:
+        disk.create(1024)
+    except Exception as e:
+        print(e)
+
+    if not os.path.exists(mount_path):
+        os.mkdir(mount_path)
+    disk.mount(mount_path)
+
+    print(disk.is_mounted())
+    print(disk.get_mount_points())
+    print(disk.get_disk_info())
+    disk.unmount(mount_path)
