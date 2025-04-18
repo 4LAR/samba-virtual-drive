@@ -47,7 +47,7 @@ os.makedirs(DISKS_PATH, exist_ok=True)
 DISKS_MOUNT_PATH = os.path.abspath("/mnt/virtual/")
 os.makedirs(DISKS_MOUNT_PATH, exist_ok=True)
 
-DISKS_LITS = []
+DISKS_LIST = []
 DISKS_CONF = [
     {
         "name": "private",
@@ -90,9 +90,9 @@ for disk_conf in DISKS_CONF:
         read_only       = disk_conf["read_only"]
     )
 
-    DISKS_LITS.append(disk)
+    DISKS_LIST.append(disk)
 
-# print(DISKS_LITS)
+# print(DISKS_LIST)
 
 ################################################################################
 
