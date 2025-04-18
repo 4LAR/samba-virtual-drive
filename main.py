@@ -54,6 +54,11 @@ DISKS_CONF = [
         "size": "1GB",
         "users": ["admin"],
         "read_only": False
+    }, {
+        "name": "test",
+        "size": "2GB",
+        "users": ["admin"],
+        "read_only": False
     }
 ]
 
@@ -79,7 +84,11 @@ for disk_conf in DISKS_CONF:
         print(f"Disk {disk_conf["name"]} exist. Skipping")
 
     for point in disk.get_mount_points():
-        disk.unmount(point)
+        try:
+            disk.unmount(point)
+        except Exception as e:
+            print(e)
+
 
     disk.mount(img_mount_path)
 
@@ -97,9 +106,17 @@ for disk_conf in DISKS_CONF:
 ################################################################################
 
 samba.configure_global_settings()
-samba.configure_firewall()
+try:
+    samba.configure_firewall()
+except Exception as e:
+    print(e)
+
 samba.restart_samba()
 
 print("Saamba is running")
 for disk_conf in DISKS_CONF:
     print(f" - \\\\<server_ip>\\{disk_conf["name"]}")
+
+import time
+while True:
+    time.sleep(1)

@@ -6,6 +6,8 @@ import configparser
 import os
 from pathlib import Path
 
+SUDO = []
+
 class SambaConfigurator:
     def __init__(self, debug=False):
         self.samba_config = "/etc/samba/smb.conf"
@@ -39,17 +41,17 @@ class SambaConfigurator:
     def backup_config(self):
         """Создание резервной копии конфига"""
         if Path(self.samba_config).exists():
-            self._run_command(["sudo", "cp", self.samba_config, self.backup_config])
+            self._run_command([*SUDO, "cp", self.samba_config, self.backup_config])
             self._print(f"Резервная копия создана: {self.backup_config}")
 
     def create_linux_user(self, username, password):
         """Создание системного пользователя"""
         try:
-            self._run_command(["sudo", "useradd", "-m", "-s", "/bin/bash", username])
+            self._run_command([*SUDO, "useradd", "-m", "-s", "/bin/bash", username])
             self._print(f"Пользователь {username} создан в системе")
 
             self._run_command(
-                ["sudo", "passwd", username],
+                [*SUDO, "passwd", username],
                 input_text=f"{password}\n{password}\n"
             )
         except subprocess.CalledProcessError as e:
@@ -58,7 +60,7 @@ class SambaConfigurator:
     def create_samba_user(self, username, password):
         """Добавление пользователя в Samba"""
         self._run_command(
-            ["sudo", "smbpasswd", "-a", username],
+            [*SUDO, "smbpasswd", "-a", username],
             input_text=f"{password}\n{password}\n"
         )
         self._print(f"Пользователь {username} добавлен в Samba")
@@ -85,8 +87,8 @@ class SambaConfigurator:
         with open('/tmp/smb.conf.tmp', 'w') as f:
             config.write(f)
 
-        self._run_command(["sudo", "mv", "/tmp/smb.conf.tmp", self.samba_config])
-        self._run_command(["sudo", "chmod", "644", self.samba_config])
+        self._run_command([*SUDO, "mv", "/tmp/smb.conf.tmp", self.samba_config])
+        self._run_command([*SUDO, "chmod", "644", self.samba_config])
         self._print("Конфигурация Samba полностью обновлена")
 
     def add_share(self, share_name, path, valid_users=None, read_only=False, browsable=True, create_mode="0664", directory_mode="0775"):
@@ -96,8 +98,8 @@ class SambaConfigurator:
             self._print(f"Создана директория {path}")
 
         # if valid_users:
-        #     self._run_command(["sudo", "chown", f"{valid_users[0]}:{valid_users[0]}", path])
-        # self._run_command(["sudo", "chmod", "775", path])
+        #     self._run_command([*SUDO, "chown", f"{valid_users[0]}:{valid_users[0]}", path])
+        self._run_command([*SUDO, "chmod", "775", path])
 
         # Создаем конфигурацию для шары
         share_config = {
@@ -108,6 +110,7 @@ class SambaConfigurator:
             'guest ok': 'no',
             'create mask': create_mode,
             'directory mask': directory_mode,
+            'force user': 'root'
             # 'force user': valid_users[0] if valid_users else 'nobody'
         }
 
@@ -119,14 +122,14 @@ class SambaConfigurator:
 
     def restart_samba(self):
         """Перезапуск Samba"""
-        self._run_command(["sudo", "systemctl", "restart", "smbd"])
-        self._run_command(["sudo", "systemctl", "enable", "smbd"])
+        self._run_command([*SUDO, "systemctl", "restart", "smbd"])
+        self._run_command([*SUDO, "systemctl", "enable", "smbd"])
         self._print("Сервис Samba перезапущен")
 
     def configure_firewall(self):
         """Настройка фаервола для Samba"""
         try:
-            self._run_command(["sudo", "ufw", "allow", "samba"])
+            self._run_command([*SUDO, "ufw", "allow", "samba"])
             self._print("Правила фаервола добавлены")
         except subprocess.CalledProcessError:
             self._print("Не удалось настроить фаервол (возможно ufw не установлен)")
@@ -134,7 +137,7 @@ class SambaConfigurator:
     def set_selinux_context(self, path):
         """Установка контекста SELinux для папки"""
         try:
-            self._run_command(["sudo", "chcon", "-t", "samba_share_t", path])
+            self._run_command([*SUDO, "chcon", "-t", "samba_share_t", path])
             self._print(f"SELinux контекст установлен для {path}")
         except subprocess.CalledProcessError:
             self._print("Не удалось установить SELinux контекст (возможно SELinux отключен)")

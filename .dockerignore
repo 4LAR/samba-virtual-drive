@@ -1,0 +1,5 @@
+.git
+venv
+virtual_drives
+__pycache__
+.env

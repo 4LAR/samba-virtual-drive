@@ -1,0 +1,11 @@
+services:
+  samba:
+    build: .
+    container_name: samba-virtual-drive
+    privileged: true
+    volumes:
+      - /dev:/dev
+      - ./virtual_drives:/app/virtual_drives
+    ports:
+      - "445:445"
+      - "139:139"
