@@ -87,10 +87,14 @@ for key in SHARE:
 
     disk.mount(img_mount_path)
 
+    users_share = share_conf.get("users", [])
+    for group in share_conf.get("groups", []):
+        users_share.extend(user for user in GROUPS.get(group, []) if user not in users_share)
+
     samba.add_share(
         share_name      = key,
         path            = img_mount_path,
-        valid_users     = share_conf["users"] if "users" in share_conf else [],
+        valid_users     = users_share,
         read_only       = share_conf["read_only"] if "read_only" in share_conf else False
     )
 
