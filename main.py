@@ -2,6 +2,7 @@ import os
 import re
 from smb import SambaConfigurator
 from mount import VirtualDisk, list_filesystems
+from config import USERS, GROUPS, SHARE
 
 ################################################################################
 
@@ -34,13 +35,6 @@ def convert_to_mb_auto(size_str):
 
 ################################################################################
 
-USERS = {
-    "admin": "password"
-}
-# os.path.abspath
-# os.path.join(a, "test")
-# os.makedirs(path, exist_ok=True)
-
 DISKS_PATH = os.path.abspath("./virtual_drives")
 os.makedirs(DISKS_PATH, exist_ok=True)
 
@@ -72,16 +66,17 @@ for user_key in USERS:
 
 ################################################################################
 
-for disk_conf in DISKS_CONF:
-    img_path = os.path.join(DISKS_PATH, disk_conf["name"] + ".img")
-    img_mount_path = os.path.join(DISKS_MOUNT_PATH, disk_conf["name"])
+for key in SHARE:
+    share_conf = SHARE[key]
+    img_path = os.path.join(DISKS_PATH, share_conf["filename"] if "filename" in share_conf else (key + ".img"))
+    img_mount_path = os.path.join(DISKS_MOUNT_PATH, key)
     disk = VirtualDisk(img_path)
     try:
-        disk.create(int(convert_to_mb_auto(disk_conf["size"])))
-        print(f"Disk {disk_conf["name"]} created.")
+        disk.create(int(convert_to_mb_auto(share_conf["size"])))
+        print(f"Disk {key} created.")
     except Exception as e:
         # print(e)
-        print(f"Disk {disk_conf["name"]} exist. Skipping")
+        print(f"Disk {key} exist. Skipping")
 
     for point in disk.get_mount_points():
         try:
@@ -93,10 +88,10 @@ for disk_conf in DISKS_CONF:
     disk.mount(img_mount_path)
 
     samba.add_share(
-        share_name      = disk_conf["name"],
+        share_name      = key,
         path            = img_mount_path,
-        valid_users     = disk_conf["users"],
-        read_only       = disk_conf["read_only"]
+        valid_users     = share_conf["users"] if "users" in share_conf else [],
+        read_only       = share_conf["read_only"] if "read_only" in share_conf else False
     )
 
     DISKS_LIST.append(disk)
@@ -114,8 +109,8 @@ except Exception as e:
 samba.restart_samba()
 
 print("Saamba is running")
-for disk_conf in DISKS_CONF:
-    print(f" - \\\\<server_ip>\\{disk_conf["name"]}")
+for key in SHARE:
+    print(f" - \\\\<server_ip>\\{key}")
 
 import time
 while True:

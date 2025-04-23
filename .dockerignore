@@ -1,5 +1,6 @@
 .git
-venv
-virtual_drives
-__pycache__
 .env
+config
+venv
+__pycache__
+virtual_drives

@@ -78,7 +78,27 @@ class SambaConfigurator:
             'dns proxy': 'no',
             'server min protocol': 'SMB2',
             'server max protocol': 'SMB3',
-            'smb encrypt': 'desired'
+            'smb encrypt': 'desired',
+            # Увеличиваем размер буферов
+            "min receivefile size": "16384",
+            "write cache size": "262144",
+            "getwd cache": "yes",
+             # Отключаем ненужные проверки
+            "strict locking": "no",
+
+            "aio read size": "16384",
+            "aio write size": "16384",
+            "use sendfile": "yes",
+            # Увеличиваем максимальный размер SMB-пакетов
+            "server max protocol": "SMB3",
+            "server min protocol": "SMB2",
+            "smb2 max read": "8388608",
+            "smb2 max write": "8388608",
+            "smb2 max trans": "8388608",
+            # Кэширование
+            "kernel share modes": "no",
+            "kernel oplocks": "no",
+            "posix locking": "no"
         }
 
         for share_name, share_config in self.shares:
@@ -160,7 +180,7 @@ if __name__ == "__main__":
 
     samba.add_share(
         share_name="test1",
-        path="/home/stolar/test_mount/zalupa",
+        path="/home/stolar/test_mount/test",
         valid_users=['stolar'],
         read_only=False
     )

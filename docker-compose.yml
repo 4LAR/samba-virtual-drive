@@ -6,6 +6,7 @@ services:
     volumes:
       - /dev:/dev
       - ./virtual_drives:/app/virtual_drives
+      - ./config:/app/config
     ports:
       - "445:445"
       - "139:139"
