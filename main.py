@@ -59,6 +59,7 @@ DISKS_CONF = [
 ################################################################################
 
 samba = SambaConfigurator()
+samba.stop_samba()
 
 for user_key in USERS:
     samba.create_linux_user(user_key, USERS[user_key])
@@ -71,8 +72,9 @@ for key in SHARE:
     img_path = os.path.join(DISKS_PATH, share_conf["filename"] if "filename" in share_conf else (key + ".img"))
     img_mount_path = os.path.join(DISKS_MOUNT_PATH, key)
     disk = VirtualDisk(img_path)
+    disk_size = int(convert_to_mb_auto(share_conf["size"]))
     try:
-        disk.create(int(convert_to_mb_auto(share_conf["size"])))
+        disk.create(disk_size)
         print(f"Disk {key} created.")
     except Exception as e:
         # print(e)
@@ -84,6 +86,9 @@ for key in SHARE:
         except Exception as e:
             print(e)
 
+    if disk.get_disk_info()["size_mb"] != disk_size:
+        print(f"Resize {key} ({disk.get_disk_info()['size_mb']}MB => {disk_size}MB)")
+        disk.resize(disk_size)
 
     disk.mount(img_mount_path)
 

@@ -146,6 +146,10 @@ class SambaConfigurator:
         self._run_command([*SUDO, "systemctl", "enable", "smbd"])
         self._print("Сервис Samba перезапущен")
 
+    def stop_samba(self):
+        self._run_command([*SUDO, "systemctl", "stop", "smbd"])
+        self._print("Сервис Samba остановлен")
+
     def configure_firewall(self):
         """Настройка фаервола для Samba"""
         try:

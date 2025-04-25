@@ -44,6 +44,29 @@ class VirtualDisk:
         except subprocess.CalledProcessError:
             return "unknown"
 
+    def _get_loop_device(self):
+        """Получает или создает loop-устройство для операций с файловой системой."""
+        if not self.loop_devices:
+            try:
+                loop_dev = subprocess.check_output(
+                    ['losetup', '--find', '--show', self.disk_image],
+                    stderr=subprocess.PIPE
+                ).decode().strip()
+                self.loop_devices.append(loop_dev)
+                return loop_dev, True
+            except subprocess.CalledProcessError as e:
+                raise VirtualDiskError(f"Failed to setup loop device: {e}")
+        return self.loop_devices[0], False
+
+    def _release_loop_device(self, loop_device, temporary):
+        """Освобождает loop-устройство, если оно было временно создано."""
+        if temporary:
+            try:
+                subprocess.run(['losetup', '-d', loop_device], check=True)
+                self.loop_devices.remove(loop_device)
+            except subprocess.CalledProcessError as e:
+                raise VirtualDiskError(f"Failed to detach loop device: {e}")
+
     def get_disk_info(self):
         """
         Возвращает информацию о виртуальном диске:
@@ -138,18 +161,67 @@ class VirtualDisk:
 
         self.loop_devices.clear()
 
-    def resize(self, new_size):
+    def resize(self, new_size_mb):
         """Изменяет размер виртуального диска (в МБ)."""
-        subprocess.run(
-            ['dd', 'if=/dev/zero', f'of={self.disk_image}', 'bs=1M', f'count={new_size}'],
-            check=True
-        )
+        if not os.path.exists(self.disk_image):
+            raise VirtualDiskError("Disk image does not exist")
 
-        for loop_device in self.loop_devices:
-            try:
-                subprocess.run(['resize2fs', loop_device], check=True)
-            except subprocess.CalledProcessError as e:
-                raise VirtualDiskError(f"Failed to resize filesystem: {e}")
+        current_size = os.path.getsize(self.disk_image) // (1024 * 1024)
+        if new_size_mb <= current_size:
+            raise VirtualDiskError("New size must be larger than current size")
+
+        loop_device, is_temp = self._get_loop_device()
+
+        try:
+            # 1. Изменяем размер образа
+            subprocess.run(
+                ['truncate', '-s', f'{new_size_mb}M', self.disk_image],
+                check=True
+            )
+
+            # 2. Расширяем loop-устройство (важно!)
+            subprocess.run(
+                ['losetup', '-c', loop_device],
+                check=True
+            )
+
+            fs_type = self._detect_filesystem()
+            if fs_type.startswith('ext'):
+                # 3. Проверяем файловую систему
+                subprocess.run(
+                    ['e2fsck', '-f', '-y', loop_device],
+                    check=True
+                )
+
+                # 4. Явно указываем новый размер файловой системы
+                # Сначала получаем размер в блоках
+                block_size = int(subprocess.check_output(
+                    ['tune2fs', '-l', loop_device],
+                    stderr=subprocess.PIPE
+                ).decode().split('Block size:')[1].split()[0])
+
+                blocks_count = (new_size_mb * 1024 * 1024) // block_size
+
+                # 5. Изменяем размер с явным указанием количества блоков
+                subprocess.run(
+                    ['resize2fs', loop_device, f'{blocks_count}'],
+                    check=True
+                )
+
+                # 6. Проверяем результат
+                final_size = os.path.getsize(self.disk_image) // (1024 * 1024)
+                if final_size < new_size_mb:
+                    raise VirtualDiskError(f"Failed to resize: expected {new_size_mb}MB, got {final_size}MB")
+
+            else:
+                raise VirtualDiskError(f"Unsupported filesystem for resize: {fs_type}")
+
+        except subprocess.CalledProcessError as e:
+            raise VirtualDiskError(f"Failed to resize disk: {e}")
+        except Exception as e:
+            raise VirtualDiskError(f"Unexpected error during resize: {e}")
+        finally:
+            self._release_loop_device(loop_device, is_temp)
 
     def get_mount_points(self):
         """Возвращает список точек монтирования, где диск может быть замонтирован."""
