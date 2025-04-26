@@ -12,14 +12,10 @@ class Shell:
         """Выполнение команд с обработкой ввода"""
         args = {
             "args": command,
-            "stdout": subprocess.PIPE,
-            "stderr": subprocess.PIPE,
+            "stdout": subprocess.PIPE if self.debug else subprocess.DEVNULL,
+            "stderr": subprocess.PIPE if self.debug else subprocess.DEVNULL,
             "shell": False
         }
-
-        if not self.debug:
-            args["stdout"] = None
-            args["stderr"] = None
 
         if input_text:
             proc = subprocess.Popen(**args, stdin=subprocess.PIPE, text=True)
@@ -31,11 +27,9 @@ class Shell:
         """Выполнение команд с выводом"""
         args = {
             "args": command,
-            "stderr": subprocess.PIPE,
+            # "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE if self.debug else subprocess.DEVNULL,
             "shell": False
         }
-
-        if not self.debug:
-            args["stderr"] = None
 
         return subprocess.check_output(**args).decode()

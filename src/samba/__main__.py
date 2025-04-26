@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from shell import Shell
 from .configure import SambaConfigure
+from .logger import SambaLogger
 
 class SambaError(Exception):
     def __init__(self, message):
@@ -12,7 +13,7 @@ class SambaError(Exception):
     def __str__(self):
         return f"{self.message}"
 
-class Samba(SambaConfigure):
+class Samba(SambaConfigure, SambaLogger):
     def __init__(self, debug=False):
         self.moduleName = "Samba"
         self.shares = []

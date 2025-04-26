@@ -128,7 +128,6 @@ samba.restart_samba()
 print("Saamba is running")
 for key in SHARE:
     print(f" - \\\\<server_ip>\\{key}")
+print()
 
-import time
-while True:
-    time.sleep(1)
+samba.monitor()
