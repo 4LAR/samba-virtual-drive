@@ -1,7 +1,9 @@
 import os
 import re
-from smb import SambaConfigurator
-from mount import VirtualDisk, list_filesystems
+import json
+from samba import Samba, SambaError, SambaConfigureError
+# from mount import VirtualDisk, list_filesystems
+from VirtualDisk import VirtualDisk
 from config import USERS, GROUPS, SHARE
 
 ################################################################################
@@ -58,11 +60,16 @@ DISKS_CONF = [
 
 ################################################################################
 
-samba = SambaConfigurator()
+samba = Samba()
 samba.stop_samba()
 
 for user_key in USERS:
-    samba.create_linux_user(user_key, USERS[user_key])
+    try:
+        samba.create_linux_user(user_key, USERS[user_key])
+    except SambaError:
+        print(f"User '{user_key}' already exist")
+    except Exception as e:
+        print(e)
     samba.create_samba_user(user_key, USERS[user_key])
 
 ################################################################################
@@ -77,7 +84,6 @@ for key in SHARE:
         disk.create(disk_size)
         print(f"Disk {key} created.")
     except Exception as e:
-        # print(e)
         print(f"Disk {key} exist. Skipping")
 
     for point in disk.get_mount_points():
@@ -95,6 +101,8 @@ for key in SHARE:
     users_share = share_conf.get("users", [])
     for group in share_conf.get("groups", []):
         users_share.extend(user for user in GROUPS.get(group, []) if user not in users_share)
+
+    print(f"{key}: {json.dumps(disk.get_disk_info(), indent=4)}")
 
     samba.add_share(
         share_name      = key,
