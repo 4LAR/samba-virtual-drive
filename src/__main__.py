@@ -60,6 +60,13 @@ DISKS_CONF = [
 
 ################################################################################
 
+YELLOW_COLOR = "\033[1;33m"
+BLUE_COLOR = "\033[1;34m"
+TURQUOISE_COLOR = "\033[1;36m"
+WHITE_COLOR = "\033[0m"
+
+################################################################################
+
 samba = Samba()
 samba.stop_samba()
 
@@ -67,7 +74,7 @@ for user_key in USERS:
     try:
         samba.create_linux_user(user_key, USERS[user_key])
     except SambaError:
-        print(f"User '{user_key}' already exist")
+        print(f"User '{user_key}' already exist. Skipping")
     except Exception as e:
         print(e)
     samba.create_samba_user(user_key, USERS[user_key])
@@ -102,7 +109,26 @@ for key in SHARE:
     for group in share_conf.get("groups", []):
         users_share.extend(user for user in GROUPS.get(group, []) if user not in users_share)
 
-    print(f"{key}: {json.dumps(disk.get_disk_info(), indent=4)}")
+    disk_info = disk.get_disk_info()
+    print()
+    print(f"{TURQUOISE_COLOR}{key}:{WHITE_COLOR}")
+    print(f"  {BLUE_COLOR}• Path:{WHITE_COLOR} {disk_info['disk_file']}")
+    print(f"  {BLUE_COLOR}• Size:{WHITE_COLOR} {disk_info['size_mb']} MB")
+    print(f"  {BLUE_COLOR}• Filesystem:{WHITE_COLOR} {disk_info['filesystem']}")
+    print(f"  {BLUE_COLOR}• Mounted:{WHITE_COLOR} {'Yes' if disk_info['mounted'] else 'No'}")
+
+    if disk_info['mounted']:
+        print(f"  {BLUE_COLOR}• Mount points:{WHITE_COLOR}")
+        for mp in disk_info['mount_points']:
+            print(f"    - {mp}")
+
+        print(f"  {BLUE_COLOR}• Usage:{WHITE_COLOR}")
+        for mp, usage in disk_info['usage'].items():
+            print(f"    {YELLOW_COLOR}{mp}:{WHITE_COLOR}")
+            print(f"      Total: {usage['total_gb']:.2f} GB")
+            print(f"      Used: {usage['used_gb']:.2f} GB ({usage['use_percent']:.1f}%)")
+            print(f"      Free: {usage['free_gb']:.2f} GB")
+    print()
 
     samba.add_share(
         share_name      = key,
@@ -127,7 +153,7 @@ samba.restart_samba()
 
 print("Saamba is running")
 for key in SHARE:
-    print(f" - \\\\<server_ip>\\{key}")
+    print(f" • \\\\<server_ip>\\{key}")
 print()
 
 samba.monitor()
