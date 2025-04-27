@@ -6,6 +6,7 @@ import os
 class diskInfo(Shell):
     def __init__(self, disk_image, loop_devices):
         self.disk_image = disk_image
+        self.disk_image_name = disk_image.replace('.img', '').split("/")[-1]
         self.loop_devices = loop_devices
 
     def _detect_filesystem(self):
@@ -65,11 +66,12 @@ class diskInfo(Shell):
         """Returns a list of mount points where the disk can be mounted."""
         mount_points = []
         try:
-            output = self._run_command_output(['mount'])
+            output = self._run_command_grep(['mount'], self.disk_image_name)
             for line in output.splitlines():
-                if self.disk_image in line or any(loop_device in line for loop_device in self.loop_devices):
+                if self.disk_image_name in line or any(loop_device in line for loop_device in self.loop_devices):
                     mount_point = line.split()[2]
                     mount_points.append(mount_point)
+
         except subprocess.CalledProcessError:
             pass
         return mount_points

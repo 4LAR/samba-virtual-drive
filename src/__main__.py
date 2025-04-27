@@ -94,6 +94,7 @@ for key in SHARE:
 
     for point in disk.get_mount_points():
         try:
+            print(f"Removing mount point '{point}' for '{key}'")
             disk.unmount(point)
         except Exception as e:
             print(e)

@@ -16,20 +16,6 @@ class diskOperations(Shell):
         self._run_command(['dd', 'if=/dev/zero', f'of={self.disk_image}', 'bs=1M', f'count={size}'], check=True)
         self._run_command(['mkfs', '-t', fs_type, self.disk_image], check=True)
 
-    # def get_mount_points(self):
-    #     """Возвращает точки монтирования, даже если программа перезапускалась."""
-    #     mount_points = []
-    #     try:
-    #         mounts = subprocess.check_output(['mount']).decode()
-    #         for line in mounts.splitlines():
-    #             if self.disk_image in line or any(dev in line for dev in self.loop_devices):
-    #                 mount_point = line.split()[2]
-    #                 mount_points.append(mount_point)
-    #     except subprocess.CalledProcessError:
-    #         pass
-    #     return mount_points
-
-
     def mount(self, mount_point):
         """Монтирует виртуальный диск в заданную точку монтирования."""
         if not os.path.exists(mount_point):
