@@ -14,10 +14,38 @@ class SambaError(Exception):
         return f"{self.message}"
 
 class Samba(SambaConfigure, SambaLogger):
-    def __init__(self, debug=False):
+    shares = []
+    def __init__(self,
+        debug=False,
+        min_protocol="SMB2",
+        max_protocol="SMB3",
+        server_name="Samba Server",
+        netbios_name="SAMBA",
+        perf_settings=None
+    ):
         self.moduleName = "Samba"
-        self.shares = []
         self.debug = debug
+
+        self.min_protocol = min_protocol
+        self.max_protocol = max_protocol
+        self.server_name = server_name
+        self.netbios_name = netbios_name
+
+        # Стандартные настройки производительности (если не переданы)
+        self.perf_settings = perf_settings or {
+            "socket options": "TCP_NODELAY IPTOS_LOWDELAY SO_RCVBUF=65536 SO_SNDBUF=65536",
+            "min receivefile size": 16384,
+            "write cache size": 262144,
+            "aio read size": 16384,
+            "aio write size": 16384,
+            "smb2 max read": 8388608,
+            "smb2 max write": 8388608,
+            "smb2 max trans": 8388608,
+            "use sendfile": True,
+            "strict locking": False,
+            "read raw": True,
+            "write raw": True,
+        }
 
     def create_linux_user(self, username, password):
         """Создание системного пользователя"""

@@ -1,7 +1,7 @@
-
 from shell import Shell
 import subprocess
 import configparser
+from pathlib import Path
 
 class SambaConfigureError(Exception):
     def __init__(self, message):
@@ -15,9 +15,6 @@ class SambaConfigure(Shell):
     samba_config = "/etc/samba/smb.conf"
     backup_config = "/etc/samba/smb.conf.bak"
 
-    def __init__(self, shares):
-        self.shares = shares
-
     def backup_config(self):
         """Создание резервной копии конфига"""
         if Path(self.samba_config).exists():
@@ -27,41 +24,31 @@ class SambaConfigure(Shell):
         """Настройка глобальных параметров Samba"""
         config = configparser.ConfigParser()
 
+        # Базовые настройки
         config['global'] = {
             'workgroup': 'WORKGROUP',
-            'server string': 'Samba Server',
-            'netbios name': 'PYTHON-SAMBA',
+            'server string': self.server_name,
+            'netbios name': self.netbios_name,
             'security': 'user',
             'map to guest': 'bad user',
             'dns proxy': 'no',
-            'server min protocol': 'SMB2',
-            'server max protocol': 'SMB3',
+            'server min protocol': self.min_protocol,
+            'server max protocol': self.max_protocol,
             'smb encrypt': 'desired',
-            # Увеличиваем размер буферов
-            "min receivefile size": "16384",
-            "write cache size": "262144",
-            "getwd cache": "yes",
-             # Отключаем ненужные проверки
-            "strict locking": "no",
-
-            "aio read size": "16384",
-            "aio write size": "16384",
-            "use sendfile": "yes",
-            # Увеличиваем максимальный размер SMB-пакетов
-            "server max protocol": "SMB3",
-            "server min protocol": "SMB2",
-            "smb2 max read": "8388608",
-            "smb2 max write": "8388608",
-            "smb2 max trans": "8388608",
-            # Кэширование
-            "kernel share modes": "no",
-            "kernel oplocks": "no",
-            "posix locking": "no"
+            'getwd cache': 'yes',
         }
 
+        # Добавляем параметры производительности
+        for key, value in self.perf_settings.items():
+            if isinstance(value, bool):
+                value = "yes" if value else "no"
+            config['global'][key] = str(value)
+
+        # Добавляем шары
         for share_name, share_config in self.shares:
             config[share_name] = share_config
 
+        # Сохраняем конфиг
         with open('/tmp/smb.conf.tmp', 'w') as f:
             config.write(f)
 

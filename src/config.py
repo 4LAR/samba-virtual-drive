@@ -1,5 +1,5 @@
 # import example
-# from config import CONFIG, USERS, GROUPS, SHARE
+# from config import CONFIG, USERS, GROUPS, SHARE, APP_CONFIG
 
 from jsonschema import validate, ValidationError
 import yaml
@@ -41,6 +41,7 @@ SCHEMA = {
                             "pattern": "^\\d+(B|KB|MB|GB|TB|PB)$"
                         },
                         "read_only": {"type": "boolean"},
+                        "auto_resize": {"type": "boolean"},
                         "users": {
                             "type": "array",
                             "items": {"type": "string"}
@@ -82,6 +83,16 @@ def humanize_error(error):
     elif error.validator == 'anyOf':
         return f"Section '{'.'.join(error.path)}' must have at least one of the fields: 'users' or 'groups'."
     return str(error)
+
+################################################################################
+
+APP_CONFIG = {
+    "debug": os.environ.get("DEBUG", "false").lower() == "true",
+    "server_name": os.environ.get("SERVER_NAME", "Samba Server"),
+    "netbios_name": os.environ.get("NETBIOS_NAME", "SAMBA"),
+    "min_protocol": os.environ.get("MIN_PROTOCOL", "SMB2"),
+    "max_protocol": os.environ.get("MAX_PROTOCOL", "SMB3"),
+}
 
 ################################################################################
 

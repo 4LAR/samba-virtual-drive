@@ -2,9 +2,8 @@ import os
 import re
 import json
 from samba import Samba, SambaError, SambaConfigureError
-# from mount import VirtualDisk, list_filesystems
 from VirtualDisk import VirtualDisk
-from config import USERS, GROUPS, SHARE
+from config import USERS, GROUPS, SHARE, APP_CONFIG
 
 ################################################################################
 
@@ -67,7 +66,7 @@ WHITE_COLOR = "\033[0m"
 
 ################################################################################
 
-samba = Samba()
+samba = Samba(**APP_CONFIG)
 samba.stop_samba()
 
 for user_key in USERS:
@@ -85,7 +84,7 @@ for key in SHARE:
     share_conf = SHARE[key]
     img_path = os.path.join(DISKS_PATH, share_conf["filename"] if "filename" in share_conf else (key + ".img"))
     img_mount_path = os.path.join(DISKS_MOUNT_PATH, key)
-    disk = VirtualDisk(img_path)
+    disk = VirtualDisk(img_path, debug=APP_CONFIG["debug"])
     disk_size = int(convert_to_mb_auto(share_conf["size"]))
     try:
         disk.create(disk_size)
@@ -99,7 +98,7 @@ for key in SHARE:
         except Exception as e:
             print(e)
 
-    if disk.get_disk_info()["size_mb"] != disk_size:
+    if (disk.get_disk_info()["size_mb"] != disk_size) and not ("auto_resize" in share_conf and not share_conf["auto_resize"]):
         print(f"Resize {key} ({disk.get_disk_info()['size_mb']}MB => {disk_size}MB)")
         disk.resize(disk_size)
 

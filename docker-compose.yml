@@ -3,6 +3,12 @@ services:
     build: .
     container_name: samba-virtual-drive
     privileged: true
+    environment:
+      - DEBUG=false
+      - SERVER_NAME=Samba Server
+      - NETBIOS_NAME=SAMBA
+      - MIN_PROTOCOL=SMB2
+      - MAX_PROTOCOL=SMB3
     volumes:
       - /dev:/dev
       - ./virtual_drives:/app/virtual_drives

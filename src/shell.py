@@ -12,8 +12,8 @@ class Shell:
         """Выполнение команд с обработкой ввода"""
         args = {
             "args": command,
-            "stdout": subprocess.PIPE if self.debug else subprocess.DEVNULL,
-            "stderr": subprocess.PIPE if self.debug else subprocess.DEVNULL,
+            "stdout": None if self.debug else subprocess.DEVNULL,
+            "stderr": None if self.debug else subprocess.DEVNULL,
             "shell": False
         }
 
@@ -28,7 +28,7 @@ class Shell:
         args = {
             "args": command,
             # "stdout": subprocess.PIPE,
-            "stderr": subprocess.PIPE if self.debug else subprocess.DEVNULL,
+            "stderr": None if self.debug else subprocess.DEVNULL,
             "shell": False
         }
 
