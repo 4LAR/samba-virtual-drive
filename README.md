@@ -54,7 +54,7 @@ share:    # Optional section
 
 ### __Users__ section
 
-Определяет список пользователей системы.
+Defines a list of users.
 
 ```yml
 users:
